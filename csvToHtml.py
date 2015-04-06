@@ -10,13 +10,13 @@
     Written by Kevin Rigney
     Last edit 2015-04-05
     Tested and working on:
-    Linux (Ubuntu 14.04), Python 2.7.6
-    Windows 7, Python 2.7.9
-    
+    Linux (Ubuntu 14.04), Python 2.7.6, Python 3.4.0
+    Windows 7, Python 2.7.9    
 '''
     
 import argparse
 import sys
+from os import sep
 
 class ColumnError(Exception):
     pass
@@ -211,13 +211,27 @@ if __name__ == '__main__':
     num_files = len(args.input)
         
     if args.table_title == []:
-        # Figure out what the file name is
-        raise NotImplementedError('''Automatic titles haven't been implemented. You must specify a title for each table.''')
-    
-        for item in range(0,num_files):
-            filename = args.input[item]
+        # Make sure we can actually figure out a meaningful file name
+        if args.input != '/dev/stdin':        
+            # Figure out what the file name is            
+            for filename in args.input:                       
+                # If they set it to '' then they don't want us stripping an extension
+                if args.extension != '':
+                    extension_location = filename.rfind(args.extension)
+                    # Make sure we found it at the end
+                    if extension_location != -1 and (len(args.extension) == (len(filename) - extension_location)):
+                        filename = filename[0:extension_location]
+                
+                # Now only take the last part
+                filename = filename.split(sep)[-1]
+                
+                # And add it to the list
+                args.table_title.append(filename)
+        else:
+            # Because they are using a pipe we can't get a worthwile name.
+            # Don't make table titles
+            args.table_title = None
             
-    
     elif args.table_title is None:
         # Use ''
         args.table_title = []
@@ -225,7 +239,7 @@ if __name__ == '__main__':
             args.table_title.append('')
     
     # Make sure there are as many titles as there are files    
-    if len(args.input) != len(args.table_title):
+    if len(args.input) > len(args.table_title):
         raise IndexError('''Either you didn't specify enough titles or something went wrong in the program logic''')
 
     for item in range(0,num_files):
